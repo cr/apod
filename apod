@@ -50,7 +50,7 @@ usage () {
 	automatic updates:
 	        Run the shell command "crontab -e" and add a line like:
 
-	        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png \
+	        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png \\
 	              && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
 
 	        You may also use @daily or @reboot if your system is permanently
