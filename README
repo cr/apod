@@ -3,7 +3,7 @@ Download the Astronomy Picture of the Day
 (c) 2003-2012 Christiane Ruetten
 Free software licensed under GPLv2
 
-usage:  apod update|get|lock|unlock [<options> ...]
+usage:  apod.sh update|get|lock|unlock|wallpaper|archive [<options> ...]
 
 commands:
         update [<file> [<date>]]
@@ -25,10 +25,14 @@ commands:
         wallpaper [<file>]
              set wallpaper on desktop.
 
+        archive [<searchterm>]
+             list APOD archive, optionally filter titles.	
+
 automatic updates:
         Run the shell command "crontab -e" and add a line like:
 
-        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png 	              && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
+        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png \
+             && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
 
         You may also use @daily or @reboot if your system is permanently
         online.

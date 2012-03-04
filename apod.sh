@@ -12,6 +12,7 @@
 #   0.3 - don't override environment's PATH
 #       - setting apple desktop wallpaper
 #       - now using apod.nasa.gov
+#       - added archive command
 version='0.3'
 
 #############################################################################
@@ -25,7 +26,7 @@ usage () {
 	(c) 2003-2012 Christiane Ruetten
 	Free software licensed under GPLv2
 	
-	usage:  $(basename "$0") update|get|lock|unlock|wallpaper [<options> ...]
+	usage:  $(basename "$0") update|get|lock|unlock|wallpaper|archive [<options> ...]
 	
 	commands:
 	        update [<file> [<date>]]
@@ -46,12 +47,15 @@ usage () {
 
 	        wallpaper [<file>]
 	             set wallpaper on desktop.
-	
+
+	        archive [<searchterm>]
+	             list APOD archive, optionally filter titles.	
+
 	automatic updates:
 	        Run the shell command "crontab -e" and add a line like:
 
 	        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png \\
-	              && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
+	             && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
 
 	        You may also use @daily or @reboot if your system is permanently
 	        online.
@@ -131,6 +135,22 @@ set_wallpaper() {
     fi
 }
 
+list_archive() {
+    wget "$URLBASE/archivepix.html" -q -O - \
+      | grep ".*[12][90].*:  <a href" \
+      | while read y m d a line
+      do
+		line=${line#href=\"}
+		image=${line%%\"*}
+		line=${line#*\">}
+		title=${line%</a>*}
+        date=${image%.html}
+		date=${date#ap}
+		url="$URLBASE/ap$date.html"
+	    echo "$date	$url	$title"
+      done
+}
+
 sanity_check () {
 
 	if ! which wget >&/dev/null
@@ -202,6 +222,16 @@ case "$cmd" in
   wallpaper)
 	picfile=${2:-$HOME/apod.png}
 	set_wallpaper "$picfile"
+	;;
+
+  archive)
+	search=$2
+	if [ -n "$search" ]
+	then
+		list_archive | egrep -i "$search"
+	else
+		list_archive
+	fi
 	;;
 
   *help)
