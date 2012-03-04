@@ -1,0 +1,35 @@
+apod 0.3
+Download the Astronomy Picture of the Day
+(c) 2003-2012 Christiane Ruetten
+Free software licensed under GPLv2
+
+usage:  apod update|get|lock|unlock [<options> ...]
+
+commands:
+        update [<file> [<date>]]
+             loads image to file, ~/apod.png if unspecified. Format of
+             optional date is YYMMDD. If unspecified, today's picture
+             is loaded.
+
+        get [<file> [<date>]]
+             Same as update, but ignores the locking.
+
+        lock
+             prevents subsequent updates from running. Useful if you
+             have the script running as a cronjob but like today's
+             picture so much.
+
+        unlock
+             removes the locking flag.
+
+        wallpaper [<file>]
+             set wallpaper on desktop.
+
+automatic updates:
+        Run the shell command "crontab -e" and add a line like:
+
+        @hourly /home/cr/apod.sh update /home/cr/Images/apod.png 	              && /home/cr/apod.sh wallpaper /home/cr/Images/apod.png
+
+        You may also use @daily or @reboot if your system is permanently
+        online.
+
