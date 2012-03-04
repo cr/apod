@@ -4,11 +4,11 @@
 # This is free software under the GNU General Public License V2
 
 # Changelog:
-#	0.1	- first stable version
-#	0.2	- command line options added
-#		- lock function added
-#		- code cleanup
-#		- fail gracefully if no pic today
+#  0.1  - first stable version
+#  0.2  - command line options added
+#       - lock function added
+#       - code cleanup
+#       - fail gracefully if no pic today
 #   0.3 - don't override environment's PATH
 #       - setting apple desktop wallpaper
 #       - now using apod.nasa.gov
