@@ -132,7 +132,10 @@ set_wallpaper() {
 		set_apple_wallpaper "$tmpfile"
 		set_apple_wallpaper "$imagefile"
 		rm -f "$tmpfile"
+	else
+		echo "Currently only OS X is supported. Please set wallpaper manually."
     fi
+	
 }
 
 list_archive() {
