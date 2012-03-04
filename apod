@@ -25,7 +25,7 @@ usage () {
 	(c) 2003-2012 Christiane Ruetten
 	Free software licensed under GPLv2
 	
-	usage:  $(basename "$0") update|get|lock|unlock [<options> ...]
+	usage:  $(basename "$0") update|get|lock|unlock|wallpaper [<options> ...]
 	
 	commands:
 	        update [<file> [<date>]]
