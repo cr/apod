@@ -9,7 +9,7 @@
 #       - lock function added
 #       - code cleanup
 #       - fail gracefully if no pic today
-#   0.3 - don't override environment's PATH
+#  0.3  - don't override environment's PATH
 #       - setting apple desktop wallpaper
 #       - now using apod.nasa.gov
 #       - added archive command
