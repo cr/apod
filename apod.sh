@@ -73,7 +73,7 @@ URLBASE='http://apod.nasa.gov/apod'
 #
 MARKER='href="image/'
 # path not set in all environments (eg. some cron)
-PATH=/usr/bin/:/bin:$PATH
+PATH=/usr/bin/:/bin:/usr/local/bin:/opt/local/bin/:$PATH
 #PROXY='http://user:password@wwwproxy.domain.de:8080'
 
 
