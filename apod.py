@@ -21,6 +21,7 @@
 #       - added archive command
 #  0.4  - wallpaper: multi screen support on OS X
 #  0.5  - python rewrite
+#       - cache directory added
 version = "0.5a"
 
 ##################################################################################################
@@ -427,8 +428,7 @@ def main():
 	# cache command ###################################################
 	elif command == "cache":
 		cache = ApodCache( opt.cache )
-		print cache.files().join( "\n" )
-		cache.cleanup( opt.backlog )
+		print cache.files()
 
 	# wallpaper command ###############################################
 	elif command == "wallpaper":
