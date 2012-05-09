@@ -299,6 +299,7 @@ class ApodStore( object ):
 # main
 ###
 opt = {}
+args = []
 def main():
 	usage = "usage: %prog [options] command [arguments ...]"
 	parser = OptionParser( usage=usage, version="%prog "+version )
