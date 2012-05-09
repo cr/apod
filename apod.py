@@ -274,9 +274,9 @@ class ApodPic( object ):
 
 
 ##################################################################################################
-# ApodStore class
+# ApodCace class
 ###
-class ApodStore( object ):
+class ApodCache( object ):
 
 	def __init__( self, path ):
 		self.path = path
@@ -285,7 +285,7 @@ class ApodStore( object ):
 		else:
 			self.mkdir( path )
 
-	def mkdir( path ):
+	def mkdir( self, path ):
 		if not os.path.isdir( path ):
 			try:
 				os.makedirs( path )
@@ -294,6 +294,40 @@ class ApodStore( object ):
 	 				pass
 				else:
 					raise
+
+	def dir( self ):
+		return os.listdir( self.path )
+
+	def file( self, name ):
+		return self.path + "/" + name
+
+	def mtime( self, name ):
+		return os.path.getmtime( self.file( name ) )
+
+	def pics( self ):
+		pics = []
+		allfiles = sorted( self.dir() )
+		for name in allfiles:
+			if name[0:5] == "apod-":
+				mtime = self.mtime( name )
+				pics.append( {'name':name, 'mtime':mtime} )
+		sortedpics = sorted( pics, key = lambda pic: pic['mtime'], reverse = True )
+		return [ pic['name'] for pic in sortedpics ]
+
+	def files( self ):
+		return [ self.file( pic ) for pic in self.pics() ]
+
+	def cleanup( self, cachemax ):
+		pics = self.pics()
+		print pics
+		cachefill = len( pics )
+		cachemax = int( cachemax )
+		if cachefill > cachemax:
+			for name in pics[cachemax-cachefill:]:
+				self.delete( name )
+
+	def delete( self, name ):
+		print "Deleting obsolete", self.path + "/" + name
 
 
 ##################################################################################################
@@ -306,10 +340,12 @@ def main():
 	parser = OptionParser( usage=usage, version="%prog "+version )
 	parser.add_option( "-d", "--date", dest="date", metavar="DATE",
         help="specify date for APOD as YYMMDD (default most recent)" )
+	parser.add_option( "-s", "--screens", dest="screens", metavar="NR",
+        help="Number of screens for wallpaper actions (default 1)" )
 	parser.add_option( "-b", "--backlog", dest="backlog", default=5,
-        help="number of pictures retained in store (default 5)" )
-	parser.add_option( "-s", "--store", dest="store", default=os.getenv("HOME")+".apod",
-        help="directory for picture store (default $HOME/.apod)" )
+        help="number of pictures retained in cache (default 5)" )
+	parser.add_option( "-c", "--cache", dest="cache", default=os.getenv("HOME")+"/.apod",
+        help="directory for picture cache (default $HOME/.apod)" )
 	parser.add_option( "-v", "--verbose", action="store_true", dest="verbose", default=False,
         help="show what's going on (default: false)" )
 	(opt, args) = parser.parse_args()
@@ -349,6 +385,21 @@ def main():
 		archive = apod.getArchive()
 		for date, desc in sorted( archive.items() ):
 			print date, desc
+
+	# cache command ###################################################
+	elif command == "cache":
+		cache = ApodCache( opt.cache )
+		print cache.files()
+		print "Backlog:", opt.backlog
+		cache.cleanup( opt.backlog )
+
+	# wallpaper command ###############################################
+	elif command == "wallpaper":
+		print "Setting wallpaper, currently disabled."
+
+	# update command ##################################################
+	elif command == "update":
+		print "Update cache and set wallpaper(s), currently disabled."
 
 	# command error ###################################################
 	else:
