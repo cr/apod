@@ -446,7 +446,22 @@ def main():
 
 	# update command ##################################################
 	elif command == "update":
-		print "Update cache and set wallpaper(s), currently disabled."
+		cache = ApodCache( opt.cache )
+		apod = ApodSite()
+		print "Trying today..."
+		apod.get( opt.date )
+		while not apod.hasPic():
+			print "Trying previous pic..."
+			apod.getPrev()
+		name = cache.path + "/apod-" + apod.picDate() + ".png"
+		if not os.path.isfile( name ):
+			print "Fetching", apod.picUrl()
+			pic = ApodPic( apod.getPic() )
+			pic.saveAs( name )
+		cache.cleanup( opt.backlog )
+		wp = Wallpaper()
+		if wp.available:
+			wp.set( cache.files() )
 
 	# command error ###################################################
 	else:
