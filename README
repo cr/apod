@@ -1,4 +1,4 @@
-apod 0.3
+apod 0.4
 Download the Astronomy Picture of the Day
 (c) 2003-2012 Christiane Ruetten
 Free software licensed under GPLv2
@@ -23,7 +23,7 @@ commands:
              removes the locking flag.
 
         wallpaper [<file>]
-             set wallpaper on desktop.
+             set wallpaper on (possibly every) desktop.
 
         archive [<searchterm>]
              list APOD archive, optionally filter titles.	
