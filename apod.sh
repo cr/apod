@@ -13,7 +13,8 @@
 #       - setting apple desktop wallpaper
 #       - now using apod.nasa.gov
 #       - added archive command
-version='0.3'
+#  0.4  - wallpaper: multi screen support on OS X
+version='0.4a'
 
 #############################################################################
 # how to use this program
@@ -115,8 +116,15 @@ get_apod () {
 set_apple_wallpaper () {
 	image=$1
 	osascript <<- EOF
+	set picFile to POSIX file "$image"
 	tell application "Finder"
-	set desktop picture to "$image" as POSIX file
+	set desktop picture to picFile
+	end tell
+	tell application "System Events"
+	set picture of every desktop to picFile
+	set picture of desktop 1 to picFile
+	set picture of desktop 2 to picFile
+	set picture of desktop 3 to picFile
 	end tell
 	EOF
 }
