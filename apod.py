@@ -33,6 +33,7 @@ import logging
 from optparse import OptionParser
 import re
 from cStringIO import StringIO
+from subprocess import Popen, PIPE
 
 
 try:
@@ -329,6 +330,43 @@ class ApodCache( object ):
 	def delete( self, name ):
 		print "Deleting obsolete", self.path + "/" + name
 
+##################################################################################################
+# Wallpaper class
+###
+class Wallpaper( object ):
+	"""
+	Class abstracting OS-specific wallpaper operations
+	"""
+	def __init__( self ):
+		self.ostype = "unknown"
+		self.available = False
+		self.set = None
+
+		if os.sys.platform == 'darwin':
+			if os.path.isfile( '/usr/bin/osascript' ):
+				self.available = True
+				self.ostype = "Darwin"
+				self.set = self.setDarwin
+
+	def setDarwin( self, filenames ):
+		nr = 0
+		for f in filenames:
+			nr += 1
+			if os.path.isfile( f ):
+				script = '''
+					set picFile to POSIX file "''' + f + '''"
+					set nr to ''' + str( nr ) + '''
+					tell application "System Events"
+						set picture of desktop nr to picFile
+					end tell
+				'''
+				arg = []
+				p = Popen( ['/usr/bin/osascript', '-'] + arg,
+					stdin = PIPE, stdout = PIPE, stderr = PIPE )
+				stdout, stderr = p.communicate( script )
+				# CAVE: discard all osascript errors
+				#print p.returncode, stdout, stderr
+
 
 ##################################################################################################
 # main
@@ -389,13 +427,22 @@ def main():
 	# cache command ###################################################
 	elif command == "cache":
 		cache = ApodCache( opt.cache )
-		print cache.files()
-		print "Backlog:", opt.backlog
+		print cache.files().join( "\n" )
 		cache.cleanup( opt.backlog )
 
 	# wallpaper command ###############################################
 	elif command == "wallpaper":
-		print "Setting wallpaper, currently disabled."
+		if len( args ) > 1:
+			filenames = args[1:]
+		else:
+			cache = ApodCache( opt.cache )
+			filenames = cache.files()
+		wp = Wallpaper()
+		if wp.available:
+			print "Setting desktop wallpaper(s) to", filenames
+			wp.set( filenames )
+		else:
+			print >> sys.stderror, "ERROR: unsupported os type " + wp.ostype
 
 	# update command ##################################################
 	elif command == "update":
