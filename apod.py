@@ -213,15 +213,18 @@ class ApodSite( object ):
 		Returns title of APOD fetched by previous get(),
 		else None.
 		"""
-		return self.pictitle
+		return self.title
 
-	def picTitle( self ):
+	def picExplanation( self ):
 		"""
 		Returns HTML explanation of APOD fetched by previous get(), else None.
 
 		Currently returns broken text string.
 		"""
-		return self.explanation.text
+		text = self.explanation( text = True )
+		text = ' '.join( text ).replace( '\n', ' ' )
+		text = text.replace( "  ", " " ).replace( "  ", " " ).replace( "  ", " " )
+		return text.strip()
 
 	def getPic( self ):
 		"""
@@ -417,6 +420,14 @@ def main():
 		apod = ApodSite()
 		apod.get( opt.date )
 		print apod
+
+	# explain command #################################################
+	elif command == "explain":
+		apod = ApodSite()
+		apod.get( opt.date )
+		print apod.picDate(), apod.picTitle()
+		print
+		print apod.picExplanation()
 
 	# archive command #################################################
 	elif command == "archive":
