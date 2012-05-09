@@ -21,7 +21,7 @@
 #       - added archive command
 #  0.4  - wallpaper: multi screen support on OS X
 #  0.5  - python rewrite
-version = "0.5"
+version = "0.5a"
 
 ##################################################################################################
 # imports
@@ -29,17 +29,20 @@ version = "0.5"
 import sys
 import os
 import errno
+import logging
+from optparse import OptionParser
+import re
+from cStringIO import StringIO
+
 
 try:
-	from optparse import OptionParser
 	from BeautifulSoup import BeautifulSoup
 	import requests
-	import re
 	from PIL import Image
-	from cStringIO import StringIO
 
 except:
-	print >> sys.stderr, "ERROR: missing python module", sys.exc_info()[0]
+	print >> sys.stderr, "ERROR: missing python modules. Make sure to install"
+	print >> sys.stderr, "       beautifulsoup, requests, and pil"
 	sys.exit( 5 )
 
 ##################################################################################################
