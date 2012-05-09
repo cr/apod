@@ -134,6 +134,7 @@ class ApodSite( object ):
 
 				# link to next APOD
 				# CAVE: is set even if there is no tomorrow yet
+				# TODO: don't parse if today's picture / no date given
 				if l.text == "&gt;":
 					try:
 						match = re.search( 'ap([0-9]{6}).html', l['href'] )
