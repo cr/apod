@@ -36,7 +36,6 @@ import re
 from cStringIO import StringIO
 from subprocess import Popen, PIPE
 
-
 try:
 	from BeautifulSoup import BeautifulSoup
 	import requests
@@ -127,12 +126,8 @@ class ApodSite( object ):
 				# link to discussion page contains date in YYMMDD format
 				# only parse if no date was given
 				if not self.date and l.text == "Discuss":
-					try:
-						match = re.search( '^.*asterisk.*date=([0-9]{6})$', l['href'] )
-						self.date = match.group(1)
-						self.url = self.dateToUrl( self.date )
-					except:
-						pass
+					self.date = l['href'].split('=')[1]
+					self.url = self.dateToUrl( self.date )
 
 				# link to next APOD
 				# CAVE: is set even if there is no tomorrow yet
@@ -169,6 +164,15 @@ class ApodSite( object ):
 			return True
 		else:
 			return False
+
+	def getLatestWithPic( self, date ):
+		"""
+		Perform getPrev() until it hasPic().
+		"""
+		if not self.url:
+			self.get( date )
+		while not self.hasPic():
+			self.getPrev()
 
 	def dateToUrl( self, date = None ):
 		"""
@@ -213,7 +217,7 @@ class ApodSite( object ):
 		Returns title of APOD fetched by previous get(),
 		else None.
 		"""
-		return self.title
+		return self.title.strip()
 
 	def picExplanation( self ):
 		"""
@@ -306,6 +310,16 @@ class ApodCache( object ):
 	def file( self, name ):
 		return self.path + "/" + name
 
+	def cacheName( self, name ):
+		if self.path in name:
+			return name[len( self.path ):]
+		else:
+			return name
+
+	def isCached( self, name ):
+		cachename = aelf.cacheName( name )
+		return cachename in self.dir()
+
 	def mtime( self, name ):
 		return os.path.getmtime( self.file( name ) )
 
@@ -324,7 +338,6 @@ class ApodCache( object ):
 
 	def cleanup( self, cachemax ):
 		pics = self.pics()
-		print pics
 		cachefill = len( pics )
 		cachemax = int( cachemax )
 		if cachefill > cachemax:
@@ -332,7 +345,7 @@ class ApodCache( object ):
 				self.delete( name )
 
 	def delete( self, name ):
-		print "Deleting obsolete", self.path + "/" + name
+		os.unlink( self.path + "/" + name )
 
 ##################################################################################################
 # Wallpaper class
@@ -459,14 +472,9 @@ def main():
 	elif command == "update":
 		cache = ApodCache( opt.cache )
 		apod = ApodSite()
-		print "Trying today..."
-		apod.get( opt.date )
-		while not apod.hasPic():
-			print "Trying previous pic..."
-			apod.getPrev()
+		apod.getLatestWithPic( opt.date )
 		name = cache.path + "/apod-" + apod.picDate() + ".png"
 		if not os.path.isfile( name ):
-			print "Fetching", apod.picUrl()
 			pic = ApodPic( apod.getPic() )
 			pic.saveAs( name )
 		cache.cleanup( opt.backlog )
