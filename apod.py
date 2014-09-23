@@ -4,7 +4,7 @@
 # info
 ###
 # apod - download the Astronomy Picture of the day
-# (c) 2003-20012 Christiane Ruetten
+# (c) 2003-2014 Christiane Ruetten
 # This is free software under the GNU General Public License V2
 
 ##################################################################################################
@@ -23,6 +23,7 @@
 #  0.5  - python rewrite
 #       - cache directory added
 #       - support for proper date formats
+#       - wallpaper osascript updated for 10.9
 version = "0.5b"
 
 ##################################################################################################
@@ -425,7 +426,7 @@ class Wallpaper( object ):
 			nr += 1
 			if os.path.isfile( f ):
 				script = '''
-					set picFile to POSIX file "''' + f + '''"
+					set picFile to "''' + f + '''"
 					set nr to ''' + str( nr ) + '''
 					tell application "System Events"
 						set picture of desktop nr to picFile
