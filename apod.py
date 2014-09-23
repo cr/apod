@@ -22,7 +22,8 @@
 #  0.4  - wallpaper: multi screen support on OS X
 #  0.5  - python rewrite
 #       - cache directory added
-version = "0.5a"
+#       - support for proper date formats
+version = "0.5b"
 
 ##################################################################################################
 # imports
@@ -35,6 +36,7 @@ from optparse import OptionParser
 import re
 from cStringIO import StringIO
 from subprocess import Popen, PIPE
+from datetime import datetime
 
 try:
 	from BeautifulSoup import BeautifulSoup
@@ -67,6 +69,34 @@ class ApodSite( object ):
 		self.explanation = None
 		self.title = None
 		self.soup = None
+		self.date = None
+
+	def asDate( self, date ):
+		"""
+		The job of this function is to be smart about dates. It can parse the
+		APOD standard "991231" and ISO "1999-12-31". datetime objects and None
+		are passed transparently.
+
+		Returns a datetime object or None.
+		"""
+		if type(date) == datetime or date == None:
+			return date
+		date = str( date ) # could be unicode
+		if len(date) == 6:
+			return datetime.strptime( date, '%y%m%d' )
+		if len(date) == 10:
+			return datetime.strptime( date, '%Y-%m-%d' )
+		raise ValueError("invalid date")
+
+	def dateToUrl( self, date = None ):
+		"""
+		Converts date object to a complete APOD URI string.
+		"""
+		date = self.asDate( date )
+		if date:
+			return self.urlbase + "/ap" + date.strftime('%y%m%d') + ".html"
+		else:
+			return self.urlbase
 
 	def get( self, date = None ):
 		"""
@@ -75,8 +105,9 @@ class ApodSite( object ):
 
 		The date parameter is saved for later use.
 		"""
-		self.date = date
-		self.url = self.dateToUrl( date )
+
+		self.date = self.asDate( date )
+		self.url = self.dateToUrl( self.date )
 		request = requests.get( self.url )
 		try:
 			request = requests.get( self.url )
@@ -87,7 +118,6 @@ class ApodSite( object ):
 			raise
 
 		else:
-
 			# buffer HTML in a soup object
 			self.soup = BeautifulSoup( request.text )
 			assert len( self.soup ) >= 2
@@ -126,7 +156,7 @@ class ApodSite( object ):
 				# link to discussion page contains date in YYMMDD format
 				# only parse if no date was given
 				if not self.date and l.text == "Discuss":
-					self.date = l['href'].split('=')[1]
+					self.date = self.asDate( l['href'].split('=')[1] )
 					self.url = self.dateToUrl( self.date )
 
 				# link to next APOD
@@ -174,15 +204,6 @@ class ApodSite( object ):
 		while not self.hasPic():
 			self.getPrev()
 
-	def dateToUrl( self, date = None ):
-		"""
-		Converts date string in YYMMDD format to a complete APOD URI.
-		"""
-		if date:
-			return self.urlbase + "/ap" + date + ".html"
-		else:
-			return self.urlbase
-
 	def hasPic( self ):
 		"""
 		Returns True if the APOD page fetched by the previous get()
@@ -196,13 +217,24 @@ class ApodSite( object ):
 		else:
 			return False
 
-	def picDate( self ):
+	def picDateStr( self ):
 		"""
-		Returns date of APOD page fetched by previous get(). This is
+		Returns date string of APOD page fetched by previous get(). This is
 		useful if you call get() without date parameter to fetch today's
 		APOD.
 
 		Might still return None if the page could not be parsed for the date.
+		"""
+		if self.date == None:
+			return None
+		else:
+			return self.date.strftime('%F')
+
+	def picDate( self ):
+		"""
+		Returns date of APOD page fetched by previous get().
+
+		Can be None.
 		"""
 		return self.date
 
@@ -249,16 +281,16 @@ class ApodSite( object ):
 			soup = BeautifulSoup( request.text )
 			self.archive = {}
 			for link in soup.b('a'):
-					date = link['href'][2:8]
+					date = datetime.strptime( link['href'][2:8], '%y%m%d' )
 					desc = link.text
-					self.archive[date] = desc
+					self.archive[date.strftime( '%F' )] = desc
 		return self.archive
 
 	def info( self ):
 		"""
 		Returns string containing current status.
 		"""
-		ret = "date:" + self.date
+		ret = "date:" + self.date.strftime( '%F' )
 		ret += "\nurl:" + self.url
 		ret += "\nnext:" + self.next
 		ret += "\nprev:" + self.prev
@@ -305,36 +337,58 @@ class ApodCache( object ):
 					raise
 
 	def dir( self ):
-		return os.listdir( self.path )
+		return [self.path+'/'+n for n in os.listdir( self.path )]
 
-	def file( self, name ):
-		return self.path + "/" + name
+	def asDate( self, date ):
+		"""
+		The job of this function is to be smart about dates. It can parse the
+		APOD standard "991231" and ISO "1999-12-31". datetime objects and None
+		are passed transparently.
 
-	def cacheName( self, name ):
-		if self.path in name:
-			return name[len( self.path ):]
-		else:
-			return name
+		Returns a datetime object or None.
+		"""
+		if type(date) == datetime or date == None:
+			return date
+		date = str( date ) # could be unicode
+		if len(date) == 6:
+			return datetime.strptime( date, '%y%m%d' )
+		if len(date) == 10:
+			return datetime.strptime( date, '%Y-%m-%d' )
+		raise ValueError("invalid date")
 
-	def isCached( self, name ):
-		cachename = aelf.cacheName( name )
-		return cachename in self.dir()
+	def cacheName( self, date, prefix='apod-', postfix='.png' ):
+		date = self.asDate( date )
+		return date.strftime( prefix + '%Y-%m-%d' + postfix )
 
-	def mtime( self, name ):
-		return os.path.getmtime( self.file( name ) )
+	def cacheFile( self, date, prefix='apod-', postfix='.png' ):
+		return self.path + '/' + self.cacheName( date, prefix=prefix, postfix=postfix )
+
+	def isCached( self, date ):
+		#return cachename in self.dir() # slow on big caches
+		return os.path.isfile( self.cacheFile( date ) ) 
 
 	def pics( self ):
 		pics = []
-		allfiles = sorted( self.dir() )
+		allfiles = self.dir()
 		for name in allfiles:
-			if name[0:5] == "apod-":
-				mtime = self.mtime( name )
-				pics.append( {'name':name, 'mtime':mtime} )
-		sortedpics = sorted( pics, key = lambda pic: pic['mtime'], reverse = True )
+			date = None
+			try:
+				date = datetime.strptime( name, self.path+'/apod-%Y-%m-%d.png' )
+			except ValueError:
+				continue
+			try:
+				# obsolete cache format
+				date = datetime.strptime( name, 'apod-%y%m%d.png' )
+				oldname = self.path + '/' + name
+				name = date.strftime( 'apod-%Y-%m-%d.png' )
+				newname = self.path + '/' + name
+				os.rename( oldname, newname )
+			except ValueError:
+				pass
+			if type(date) == datetime:
+				pics.append( {'name':name, 'date':date.strftime('%F')} )
+		sortedpics = sorted( pics, key = lambda pic: pic['date'], reverse = True )
 		return [ pic['name'] for pic in sortedpics ]
-
-	def files( self ):
-		return [ self.file( pic ) for pic in self.pics() ]
 
 	def cleanup( self, cachemax ):
 		pics = self.pics()
@@ -342,10 +396,10 @@ class ApodCache( object ):
 		cachemax = int( cachemax )
 		if cachefill > cachemax:
 			for name in pics[cachemax-cachefill:]:
-				self.delete( name )
+				os.unlink( name )
 
-	def delete( self, name ):
-		os.unlink( self.path + "/" + name )
+	def delete( self, date ):
+		os.unlink( self.cacheFile( date ) )
 
 ##################################################################################################
 # Wallpaper class
@@ -394,7 +448,7 @@ def main():
 	usage = "usage: %prog [options] command [arguments ...]"
 	parser = OptionParser( usage=usage, version="%prog "+version )
 	parser.add_option( "-d", "--date", dest="date", metavar="DATE",
-        help="specify date for APOD as YYMMDD (default most recent)" )
+        help="specify date for APOD as YYMMDD or YYYY-MM-DD (default most recent)" )
 	parser.add_option( "-s", "--screens", dest="screens", metavar="NR",
         help="Number of screens for wallpaper actions (default 1)" )
 	parser.add_option( "-b", "--backlog", dest="backlog", default=5,
@@ -412,6 +466,7 @@ def main():
 	command = args[0]
 
 	# save command ####################################################
+	# intentionally not meddling with the cache
 	if command == "save":
 		apod = ApodSite()
 		apod.get( opt.date )
@@ -422,11 +477,11 @@ def main():
 			if len( args ) > 1:
 				name = args[1]
 			else:
-				name = "apod-" + apod.picDate() + ".png"
+				name = "apod-" + apod.picDateStr() + ".png"
 			print "Saving", name
 			pic.saveAs( name )
 		else:
-			print "No picture for", apod.picDate()
+			print "No picture for", apod.picDateStr()
 
 	# info command ####################################################
 	elif command == "info":
@@ -438,7 +493,7 @@ def main():
 	elif command == "explain":
 		apod = ApodSite()
 		apod.get( opt.date )
-		print apod.picDate(), apod.picTitle()
+		print apod.picDateStr(), apod.picTitle()
 		print
 		print apod.picExplanation()
 
@@ -452,7 +507,7 @@ def main():
 	# cache command ###################################################
 	elif command == "cache":
 		cache = ApodCache( opt.cache )
-		print cache.files()
+		print cache.pics()
 
 	# wallpaper command ###############################################
 	elif command == "wallpaper":
@@ -460,7 +515,7 @@ def main():
 			filenames = args[1:]
 		else:
 			cache = ApodCache( opt.cache )
-			filenames = cache.files()
+			filenames = cache.pics()
 		wp = Wallpaper()
 		if wp.available:
 			print "Setting desktop wallpaper(s) to", filenames
@@ -473,14 +528,13 @@ def main():
 		cache = ApodCache( opt.cache )
 		apod = ApodSite()
 		apod.getLatestWithPic( opt.date )
-		name = cache.path + "/apod-" + apod.picDate() + ".png"
-		if not os.path.isfile( name ):
+		if not cache.isCached( apod.picDate() ):
 			pic = ApodPic( apod.getPic() )
-			pic.saveAs( name )
+			pic.saveAs( cache.cacheFile( apod.picDate() ) )
 		cache.cleanup( opt.backlog )
 		wp = Wallpaper()
 		if wp.available:
-			wp.set( cache.files() )
+			wp.set( cache.pics() )
 
 	# command error ###################################################
 	else:
